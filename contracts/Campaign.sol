@@ -1,8 +1,9 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-contract Campaign {
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
+contract Campaign is ReentrancyGuard{
     address public owner;
     string public campaignCID;
     uint256 public id;
@@ -43,11 +44,13 @@ contract Campaign {
     //     _ALL_DONORS.push(donor);
     //     return true;
     // }
-    
-    function claim() public payable {
-        require(msg.sender == owner);
-        (bool success, ) = payable(owner).call{value: address(this).balance}("");
-        require(success, "Failed to claim");
+
+    function withdraw(uint256 amount) public nonReentrant {
+        require(msg.sender == owner, "you are not the owner");
+        require(amount <= address(this).balance, "Insufficient balance");
+        payable(owner).transfer(amount);
+        // (bool success, ) = payable(owner).call{value: address(this).balance}("");
+        // require(success, "Failed to claim");
     }
 
     receive() external payable {
@@ -57,5 +60,4 @@ contract Campaign {
     // function vote() public {
 
     // }
-    
 }

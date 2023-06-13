@@ -5,11 +5,11 @@ import "./Campaign.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CampaignManager is Ownable {
-
     uint256 public campaignIdCounter = 1;
     Campaign[] allCampaigns;
     mapping(address => Campaign[]) public ownerToCampaigns;
     mapping(address => uint256[]) public ownerToCampaignIds;
+    mapping(uint256 => address) public campaignIdToOwner;
     mapping(uint256 => Campaign) public idToCampaigns;
     mapping(Campaign => uint256) public campaignToIds;
 
@@ -20,7 +20,7 @@ contract CampaignManager is Ownable {
     event campaignRemoved(uint256 campaignId);
 
     mapping(uint256 => bool) public isCampaignVerified;
-    
+
     struct Donors {
         address donorAddress;
         uint256 amountDonated;
@@ -50,6 +50,7 @@ contract CampaignManager is Ownable {
         ownerToCampaignIds[msg.sender].push(campaignID);
         idToCampaigns[campaignID] = campaign;
         campaignToIds[campaign] = campaignID;
+        campaignIdToOwner[campaignID] = msg.sender;
         emit CampaignCreated(campaignID);
         return campaignID;
     }
@@ -160,9 +161,8 @@ contract CampaignManager is Ownable {
 
     function Donate(
         uint256 _campaignId,
-        uint256 _amount
-    ) public payable virtual //address payable _recipient
-    {
+        uint256 _amount //address payable _recipient
+    ) public payable virtual {
         require(
             address(idToCampaigns[_campaignId]) != address(0),
             "not a valid campaign"
@@ -179,6 +179,23 @@ contract CampaignManager is Ownable {
         _ALL_DONORS.push(donors[campaign]);
     }
 
+    function claim(uint256 _campaignId, uint256 amount) public virtual {
+        address owner = campaignIdToOwner[_campaignId];
+        require(
+            msg.sender == owner,
+            "msg.sender is not the owner of this campaign"
+        );
+        Campaign campaign = idToCampaigns[_campaignId];
+        //Campaign campaignInstance = Campaign(_campaign);
+        //campaignInstance.withdraw(amount);
+        
+        //campaign.withdraw(amount);
+        (bool success, ) = address(campaign).call(
+            abi.encodeWithSignature("withdraw(uint256)", amount)
+        );
+        require(success, "Call failed");
+    }
+
     //can only be called by the DAO
     function verifyCampaign(uint256 _campaignId) public onlyOwner {
         require(
@@ -187,6 +204,16 @@ contract CampaignManager is Ownable {
         );
         isCampaignVerified[_campaignId] = true;
     }
+
+    function getAllDonators()
+        public
+        view
+        returns (Donors[] memory _allDonorsData)
+    {
+        _allDonorsData = _ALL_DONORS;
+    }
+
+    function getAllDonatorsForCampaign(uint256 _campaignId) public {}
 
     // function getCampaignDetails() public view returns(string[] memory)
     // {}
@@ -219,8 +246,4 @@ contract CampaignManager is Ownable {
 
     //     return (campaignCID, owner, id, raisedFunds);
     // }
-
-    function getAllDonators() public view returns (Donors[] memory _allDonorsData){
-        _allDonorsData = _ALL_DONORS;
-    }
 }

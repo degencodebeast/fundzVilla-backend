@@ -3,7 +3,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract Campaign is ReentrancyGuard{
+contract Campaign {
+    bool private _locked;
+
     address public owner;
     string public campaignCID;
     uint256 public id;
@@ -45,12 +47,16 @@ contract Campaign is ReentrancyGuard{
     //     return true;
     // }
 
-    function withdraw(uint256 amount) public nonReentrant {
-        require(msg.sender == owner, "you are not the owner");
+    function withdraw(uint256 amount) external {
+        // require(!_locked, "Reentrancy guard: reentrant call");
+        // _locked = true;
+
+        require(owner == tx.origin, "you are not the owner");
         require(amount <= address(this).balance, "Insufficient balance");
         payable(owner).transfer(amount);
         // (bool success, ) = payable(owner).call{value: address(this).balance}("");
         // require(success, "Failed to claim");
+        //_locked = false;
     }
 
     receive() external payable {

@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.0;
 
 import "./Campaign.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -12,6 +12,8 @@ contract CampaignManager is Ownable {
     mapping(uint256 => address) public campaignIdToOwner;
     mapping(uint256 => Campaign) public idToCampaigns;
     mapping(Campaign => uint256) public campaignToIds;
+    mapping(uint256 => Donors[]) public campaignIdToDonors;
+    mapping(Campaign => Donors) public donors;
 
     uint256[] public allCampaignIds;
 
@@ -28,12 +30,10 @@ contract CampaignManager is Ownable {
 
     Donors[] public _ALL_DONORS;
 
-    mapping(Campaign => Donors) public donors;
-
     function createCampaign(
         string memory _campaignCID,
         uint256 _target
-    ) public payable virtual returns (uint256) {
+    ) public virtual returns (uint256) {
         uint256 campaignID = campaignIdCounter;
         campaignIdCounter++;
 
@@ -77,6 +77,12 @@ contract CampaignManager is Ownable {
         Campaign campaign
     ) public view returns (uint256 _campaignId) {
         _campaignId = campaignToIds[campaign];
+    }
+
+    function getCampaignOwner(
+        uint256 _campaignId
+    ) public view returns (address owner) {
+        owner = campaignIdToOwner[_campaignId];
     }
 
     //depending on the front end, you'll use the identifier that would be easier to
@@ -129,24 +135,16 @@ contract CampaignManager is Ownable {
         return allCampaigns.length; // Element not found, return an invalid index
     }
 
-    // function getAllCampaignAddresses()
-    //     public
-    //     view
-    //     returns (address[] memory _campaigns)
-    // {
-    //     _campaigns = new address[](campaignIdCounter);
-    //     for (uint i = 1; i < campaignIdCounter; i++) {
-    //         _campaigns[i] = address(allCampaigns[i]);
-    //     }
-    //     return _campaigns;
-    // }
-
     function getAllCampaigns()
         public
         view
         returns (Campaign[] memory _allCampaigns)
     {
         _allCampaigns = allCampaigns;
+    }
+
+    function getAddressBalance(address account) public view returns (uint256) {
+        return account.balance;
     }
 
     function getAllCampaignIds()
@@ -159,7 +157,7 @@ contract CampaignManager is Ownable {
 
     //function enableWithdrawal() public {}
 
-    function Donate(
+    function donate(
         uint256 _campaignId,
         uint256 _amount //address payable _recipient
     ) public payable virtual {
@@ -168,32 +166,34 @@ contract CampaignManager is Ownable {
             "not a valid campaign"
         );
         require(
-            msg.value > _amount,
+            msg.value >= _amount,
             "sent amount is lower than amount you want to donate"
         );
         Campaign campaign = idToCampaigns[_campaignId];
         address campaignAddr = address(campaign);
         address payable _recipient = payable(campaignAddr);
-        _recipient.transfer(_amount);
         donors[campaign] = Donors(msg.sender, _amount);
-        _ALL_DONORS.push(donors[campaign]);
+        Donors memory donorsData = donors[campaign];
+        _ALL_DONORS.push(donorsData);
+        campaignIdToDonors[_campaignId].push(donorsData);
+        _recipient.transfer(_amount);
     }
 
-    function claim(uint256 _campaignId, uint256 amount) public virtual {
+    function claim(uint256 _campaignId, uint256 amount) external virtual {
         address owner = campaignIdToOwner[_campaignId];
         require(
             msg.sender == owner,
             "msg.sender is not the owner of this campaign"
         );
+
         Campaign campaign = idToCampaigns[_campaignId];
-        //Campaign campaignInstance = Campaign(_campaign);
-        //campaignInstance.withdraw(amount);
-        
-        //campaign.withdraw(amount);
-        (bool success, ) = address(campaign).call(
-            abi.encodeWithSignature("withdraw(uint256)", amount)
-        );
-        require(success, "Call failed");
+        Campaign campaignInstance = Campaign(campaign);
+        campaignInstance.withdraw(amount);
+
+        // (bool success, ) = address(campaign).delegatecall(
+        //     abi.encodeWithSignature("withdraw(uint256)", amount)
+        // );
+        // require(success, "Call failed");
     }
 
     //can only be called by the DAO
@@ -205,6 +205,12 @@ contract CampaignManager is Ownable {
         isCampaignVerified[_campaignId] = true;
     }
 
+    function getParticularCampaignDonors(
+        uint256 _campaignId
+    ) public view returns (Donors[] memory _donors) {
+        _donors = campaignIdToDonors[_campaignId];
+    }
+
     function getAllDonators()
         public
         view
@@ -213,37 +219,6 @@ contract CampaignManager is Ownable {
         _allDonorsData = _ALL_DONORS;
     }
 
-    function getAllDonatorsForCampaign(uint256 _campaignId) public {}
-
     // function getCampaignDetails() public view returns(string[] memory)
     // {}
-
-    // function getCampaignDetails(
-    //     address[] calldata _campaignList
-    // )
-    //     public
-    //     view
-    //     returns (
-    //         string[] memory campaignCID,
-    //         address[] memory owner,
-    //         uint256[] memory id,
-    //         uint256[] memory raisedFunds
-    //     )
-    // {
-    //     owner = new address[](_campaignList.length);
-    //     id = new uint256[](_campaignList.length);
-    //     campaignCID = new string[](_campaignList.length);
-    //     raisedFunds = new uint256[](_campaignList.length);
-
-    //     for (uint256 i = 0; i < _campaignList.length; i++) {
-    //         //uint256 campaignID = allCampaignIds[_campaignList[i]];
-
-    //         owner[i] = allCampaigns[campaignID].owner();
-    //         id[i] = allCampaigns[campaignID].id();
-    //         campaignCID[i] = allCampaigns[campaignID].campaignCID();
-    //         raisedFunds[i] = allCampaigns[campaignID].raisedFunds();
-    //     }
-
-    //     return (campaignCID, owner, id, raisedFunds);
-    // }
 }

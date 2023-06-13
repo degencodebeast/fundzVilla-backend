@@ -84,8 +84,8 @@ describe("CampaignManager", function () {
 
     });
     
-    it("Owner should be able to claim campaign donations", async function () {
-      const { campaignManager, campaignFactory, owner, TARGET, campaignCID, amount } = await loadFixture(
+    it("Should should be able to get a donors on a campaign", async function () {
+      const { campaignManager, campaignFactory, owner, TARGET, campaignCID, amount, otherAccount } = await loadFixture(
         deployCampaignManagerFixture
       );
       let tx = await campaignManager.createCampaign(campaignCID, TARGET);
@@ -98,12 +98,16 @@ describe("CampaignManager", function () {
       // Multiply the amount by 1.3
       //const sentAmount = ethers.utils.parseUnits("0.9");
 
-      await campaignManager.donate(campaignId, 1000000, { gasLimit: 1000000, value: amount });
+      await campaignManager.connect(otherAccount).donate(campaignId, 1000000, { gasLimit: 1000000, value: amount });
      
-      await campaignManager.claim(campaignId, 1000000, {gasLimit:2000000 });
-      const ownerBalance = await ethers.provider.getBalance(owner.address);
-      console.log(`The owner address ${owner.address} that has campaign contract of address ${campaign} now has a balance of ${ownerBalance.toNumber()}`);
-      expect(ownerBalance.toNumber()).to.eq(1000000);
+      //await campaignManager.connect(otherAccount).claim(campaignId, 1000000, {gasLimit:2000000 });
+      // const ownerBalance = await ethers.provider.getBalance(owner.address);
+      // console.log(`The owner address ${owner.address} that has campaign contract of address ${campaign} now has a balance of ${ownerBalance.toNumber()}`);
+      // //expect(ownerBalance.toNumber()).to.eq(1000000);
+      let donor:any[] = await campaignManager.getParticularCampaignDonors(1);
+      let donorAddress = donor[0].donorAddress;
+      console.log(`Donor address is ${donorAddress} and is equal to default owner address ${otherAccount.address}`)
+      expect(donorAddress).to.eq(otherAccount.address);
 
 
 

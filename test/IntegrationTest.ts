@@ -84,7 +84,7 @@ describe("CampaignManager", function () {
 
     });
     
-    it("Should should be able to get a donors on a campaign", async function () {
+    it("Should should be able to get donors on a campaign", async function () {
       const { campaignManager, campaignFactory, owner, TARGET, campaignCID, amount, otherAccount } = await loadFixture(
         deployCampaignManagerFixture
       );

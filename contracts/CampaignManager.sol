@@ -3,8 +3,12 @@ pragma solidity ^0.8.0;
 
 import "./Campaign.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract CampaignManager is Ownable {
+    using Counters for Counters.Counter;
+    Counters.Counter private counter;
+
     uint256 public campaignIdCounter = 1;
     Campaign[] allCampaigns;
     mapping(address => Campaign[]) public ownerToCampaigns;
@@ -14,8 +18,12 @@ contract CampaignManager is Ownable {
     mapping(Campaign => uint256) public campaignToIds;
     mapping(uint256 => Donors[]) public campaignIdToDonors;
     mapping(Campaign => Donors) public donors;
+    address[] public allDAOMembers;
+    mapping(address => bool) public isDAOMember;
+    mapping(address => uint256) public daoMemberToId;
 
     uint256[] public allCampaignIds;
+    uint256[] public allSbtIds;
 
     event CampaignCreated(uint256 campaignId);
 
@@ -221,4 +229,28 @@ contract CampaignManager is Ownable {
 
     // function getCampaignDetails() public view returns(string[] memory)
     // {}
+
+    function joinDAO() public {
+        uint256 sbtId;
+        counter.increment();
+        sbtId = counter.current();
+        allSbtIds.push(sbtId);
+        allDAOMembers.push(msg.sender);
+        isDAOMember[msg.sender] = true;
+        daoMemberToId[msg.sender] = sbtId;
+    }
+
+    function getDAOMemberId(
+        address _account
+    ) public view returns (uint256 _memberId) {
+        _memberId = daoMemberToId[_account];
+    }
+
+    function getAllDAOMembers()
+        public
+        view
+        returns (address[] memory _allDAOMembers)
+    {
+        _allDAOMembers = allDAOMembers;
+    }
 }

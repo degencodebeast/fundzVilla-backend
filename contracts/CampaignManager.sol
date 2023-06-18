@@ -21,6 +21,7 @@ contract CampaignManager is Ownable {
     address[] public allDAOMembers;
     mapping(address => bool) public isDAOMember;
     mapping(address => uint256) public daoMemberToId;
+    mapping(uint256 => address) public sbtIdToDaoMember;
 
     uint256[] public allCampaignIds;
     uint256[] public allSbtIds;
@@ -238,12 +239,19 @@ contract CampaignManager is Ownable {
         allDAOMembers.push(msg.sender);
         isDAOMember[msg.sender] = true;
         daoMemberToId[msg.sender] = sbtId;
+        sbtIdToDaoMember[sbtId] = msg.sender;
     }
 
     function getDAOMemberId(
         address _account
     ) public view returns (uint256 _memberId) {
         _memberId = daoMemberToId[_account];
+    }
+
+    function getDAOMemberAddress(
+        uint256 _sbtId
+    ) public view returns (address _daoMember) {
+        _daoMember = sbtIdToDaoMember[_sbtId];
     }
 
     function getAllDAOMembers()

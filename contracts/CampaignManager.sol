@@ -232,6 +232,10 @@ contract CampaignManager is Ownable {
     // {}
 
     function joinDAO() public {
+        require(
+            !_isDAOMember(msg.sender),
+            "You are already a member of the DAO"
+        );
         uint256 sbtId;
         counter.increment();
         sbtId = counter.current();
@@ -240,6 +244,10 @@ contract CampaignManager is Ownable {
         isDAOMember[msg.sender] = true;
         daoMemberToId[msg.sender] = sbtId;
         sbtIdToDaoMember[sbtId] = msg.sender;
+    }
+
+    function _isDAOMember(address _account) public view returns (bool result) {
+        result = isDAOMember[_account];
     }
 
     function getDAOMemberId(

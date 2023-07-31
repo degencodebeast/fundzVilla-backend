@@ -4,10 +4,22 @@ pragma solidity ^0.8.0;
 import "./Campaign.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+//import {IFakeDAI} from "./IFakeDAI.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import {ISuperfluid, ISuperToken, ISuperApp} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
+import {SuperTokenV1Library} from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
+
+error Unauthorized();
 
 contract CampaignManager is Ownable {
+    using SuperTokenV1Library for ISuperToken;
+
     using Counters for Counters.Counter;
     Counters.Counter private counter;
+
+    IERC20 public cusd;
+    ISuperToken public cusdX;
 
     uint256 public campaignIdCounter = 1;
     Campaign[] allCampaigns;
@@ -38,6 +50,11 @@ contract CampaignManager is Ownable {
     }
 
     Donors[] public _ALL_DONORS;
+
+    constructor(IERC20 _cusd, ISuperToken _cusdX) {
+        _cusd = cusd;
+        _cusdX = cusdX;
+    }
 
     function createCampaign(
         string memory _campaignCID,
@@ -268,5 +285,57 @@ contract CampaignManager is Ownable {
         returns (address[] memory _allDAOMembers)
     {
         _allDAOMembers = allDAOMembers;
+    }
+
+    function upgradeCUSD(uint256 _amount) external onlyOwner {
+        cusd.approve(address(cusdX), _amount);
+        cusdX.upgrade(_amount);
+    }
+
+    function downgradeCUSDx(uint256 _amount) external onlyOwner {
+        cusdX.downgrade(_amount);
+    }
+
+    /// @notice Create a stream into the contract.
+    /// @dev This requires the contract to be a flowOperator for the msg sender.
+    /// @param _token Token to stream.
+    /// @param flowRate Flow rate per second to stream.
+    function createFlowFromSender(
+        ISuperToken _token,
+        int96 flowRate,
+        address _receiver
+    ) external {
+        //_token.createFlowWithCtx(msg.sender, address(this), flowRate);
+        _token.createFlow(_receiver, flowRate);
+    }
+
+    /// @notice Update flow from contract to specified address.
+    /// @param token Token to stream.
+    /// @param receiver Receiver of stream.
+    /// @param flowRate Flow rate per second to stream.
+    function updateFlowFromSender(
+        ISuperToken token,
+        address receiver,
+        int96 flowRate
+    ) external {
+        token.updateFlow(receiver, flowRate);
+    }
+
+    /// @notice Delete flow from contract to specified address.
+    /// @param token Token to stop streaming.
+    /// @param receiver Receiver of stream.
+    function deleteFlowFromSender(
+        ISuperToken token,
+        address receiver
+    ) external {
+        token.deleteFlow(msg.sender, receiver);
+    }
+
+    /// @notice Send a lump sum of super tokens into the contract.
+    /// @dev This requires a super token ERC20 approval.
+    /// @param token Super Token to transfer.
+    /// @param amount Amount to transfer.
+    function sendLumpSumToContract(ISuperToken token, uint256 amount) external {
+        token.transferFrom(msg.sender, address(this), amount);
     }
 }

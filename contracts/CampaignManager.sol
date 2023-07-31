@@ -220,7 +220,7 @@ contract CampaignManager is Ownable {
         _donors = campaignIdToDonors[_campaignId];
     }
 
-    function getAllDonators()
+    function getAllDonors()
         public
         view
         returns (Donors[] memory _allDonorsData)

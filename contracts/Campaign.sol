@@ -36,17 +36,6 @@ contract Campaign {
         id = _id;
     }
 
-    // function donate(string memory _name) public payable returns (bool) {
-    //     require(msg.value > 0, "You cannot donate below 0");
-    //     uint256 donation = msg.value;
-    //     raisedFunds += donation;
-    //     Donors storage donor = donors[msg.sender];
-    //     donor.name = _name;
-    //     donor.amountDonated = msg.value;
-    //     _ALL_DONORS.push(donor);
-    //     return true;
-    // }
-
     function withdraw(uint256 amount) external {
         // require(!_locked, "Reentrancy guard: reentrant call");
         // _locked = true;
@@ -63,7 +52,4 @@ contract Campaign {
         // Handle the received Ether here
     }
 
-    // function vote() public {
-
-    // }
 }

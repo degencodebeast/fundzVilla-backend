@@ -2,7 +2,7 @@ import { ethers, Wallet, getDefaultProvider } from "ethers";
 //import { wallet } from "../config/constants";
 require("dotenv").config();
 import { GovernanceToken__factory} from "../typechain-types";
-const rpc = "https://mantle-testnet.rpc.thirdweb.com";
+const rpc = "https://alfajores-forno.celo-testnet.org";
 const privateKey = process.env.NEXT_PUBLIC_EVM_PRIVATE_KEY as string;
 const wallet = new Wallet(privateKey);
 
@@ -18,7 +18,7 @@ async function deploy() {
   const governanceTokenContract = await governanceTokenFactory.deploy();
   console.log("Deploying Governance Token...")
   const deployTxReceipt = await governanceTokenContract.deployTransaction.wait();
-  console.log(`Governance Token Contract has been deployed at this address: ${governanceTokenContract.address} on the mantle network`);
+  console.log(`Governance Token Contract has been deployed at this address: ${governanceTokenContract.address} on the celo network`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

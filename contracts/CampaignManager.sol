@@ -79,7 +79,8 @@ contract CampaignManager is Ownable {
             _target,
             campaignID,
             host,
-            cusdX
+            cusdX,
+            cusd
         );
         allCampaigns.push(campaign);
         allCampaignIds.push(campaignID);
@@ -196,19 +197,19 @@ contract CampaignManager is Ownable {
 
     function donate(
         uint256 _campaignId,
-        uint256 _amount, //address payable _recipient
-        address _cusdAddr
+        uint256 _amount //address payable _recipient
+        /*address _cusdAddr*/
     ) public payable virtual {
         require(
             address(idToCampaigns[_campaignId]) != address(0),
             "not a valid campaign"
         );
-        require(
-            msg.value >= _amount,
-            "sent amount is lower than amount you want to donate"
-        );
+        // require(
+        //     msg.value >= _amount,
+        //     "sent amount is lower than amount you want to donate"
+        // );
 
-        IERC20 token = IERC20(_cusdAddr);
+        //IERC20 token = IERC20(_cusdAddr);
 
         Campaign campaign = idToCampaigns[_campaignId];
         address campaignAddr = address(campaign);
@@ -218,17 +219,17 @@ contract CampaignManager is Ownable {
         _ALL_DONORS.push(donorsData);
         campaignIdToDonors[_campaignId].push(donorsData);
         //_recipient.transfer(_amount);
-        token.transferFrom(msg.sender, _recipient, _amount);
+        cusd.transferFrom(msg.sender, _recipient, _amount);
 
         // Emit the Deposit event
-        emit Deposit(msg.sender, _cusdAddr, _amount);
+        emit Deposit(msg.sender, address(cusd), _amount);
     }
 
     function getBalance(address _cusdAddr, address account) public view returns (uint256 _balance){
         _balance = IERC20(_cusdAddr).balanceOf(account);
     }
 
-    function claim(uint256 _campaignId, uint256 amount, address _cusdAddr) external virtual {
+    function claim(uint256 _campaignId, uint256 amount/*, address _cusdAddr*/) external virtual {
         address owner = campaignIdToOwner[_campaignId];
         require(
             msg.sender == owner,
@@ -237,7 +238,7 @@ contract CampaignManager is Ownable {
 
         Campaign campaign = idToCampaigns[_campaignId];
         Campaign campaignInstance = Campaign(campaign);
-        campaignInstance.withdraw(_cusdAddr, amount);
+        campaignInstance.withdraw(amount);
 
         // (bool success, ) = address(campaign).delegatecall(
         //     abi.encodeWithSignature("withdraw(uint256)", amount)

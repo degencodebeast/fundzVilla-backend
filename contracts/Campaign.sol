@@ -28,8 +28,7 @@ contract Campaign is RedirectAll {
     uint256 public raisedFunds;
     uint256 public target;
 
-    IERC20 public constant cusd =
-        IERC20(0x765DE816845861e75A25fCA122bb6898B8B1282a);
+    IERC20 public cusd;
 
     constructor(
         address _owner,
@@ -38,29 +37,31 @@ contract Campaign is RedirectAll {
         uint256 _target,
         uint256 _id,
         ISuperfluid host,
-        ISuperToken _cusdX
+        ISuperToken _cusdX,
+        IERC20 _cusd
     ) RedirectAll(_cusdX, host, _owner) {
         owner = _owner;
         campaignCID = _campaignCID;
         createdAt = _createdAt;
         target = _target;
         id = _id;
+        cusd = _cusd;
     }
 
-    function withdraw(address _cusdAddr, uint256 amount) external {
+    function withdraw(/*address _cusdAddr, */uint256 amount) external {
         // require(!_locked, "Reentrancy guard: reentrant call");
         // _locked = true;
         // Ensure the amount is greater than 0
-        IERC20 cusdToken = IERC20(_cusdAddr);
+        //IERC20 cusdToken = IERC20(_cusdAddr);
         require(amount > 0, "Amount must be greater than 0");
 
         require(owner == tx.origin, "you are not the owner");
-        uint256 contractCusdBal = cusdToken.balanceOf(address(this));
+        uint256 contractCusdBal = cusd.balanceOf(address(this));
         require(amount <= contractCusdBal, "Insufficient balance");
         //require(amount <= address(this).balance, "Insufficient balance");
         //payable(owner).transfer(amount);
         
-        cusdToken.transfer(owner, amount);
+        cusd.transfer(owner, amount);
 
         // (bool success, ) = payable(owner).call{value: address(this).balance}("");
         // require(success, "Failed to claim");
